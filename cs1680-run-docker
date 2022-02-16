@@ -1,8 +1,9 @@
 #! /bin/bash
+set -x
 
 maindir=""
-destdir=cs300
-container_name=cs300-container
+destdir=cs1680
+container_name=cs1680-container
 
 clean=false
 verbose=false
@@ -21,7 +22,7 @@ while test "$#" -ne 0; do
             platform=linux/arm64
             shift
         else
-            echo "\`cs300-run-docker --arm\` only works on ARM64 hosts" 1>&2
+            echo "\`cs1680-run-docker --arm\` only works on ARM64 hosts" 1>&2
             exit 1
         fi
     elif test "$1" = "-x" -o "$1" = "--x86-64" -o "$1" = "--x86_64" -o "$1" = "--amd64"; then
@@ -31,7 +32,7 @@ while test "$#" -ne 0; do
         if test "$arch" = "arm64" -o "$arch" = "aarch64"; then
             armtext=" [-a|--arm] [-x|--x86-64]"
         fi
-        echo "Usage: cs300-run-docker [-C|--clean]$armtext [-V|--verbose]" 1>&2
+        echo "Usage: cs1680-run-docker [-C|--clean]$armtext [-V|--verbose]" 1>&2
         exit 1
     fi
 done
@@ -42,9 +43,9 @@ elif test -z "$platform"; then
     platform=linux/amd64
 fi
 if test -z "$tag" -a "$platform" = linux/arm64; then
-    tag=cs300:arm64
+    tag=cs1680:arm64
 elif test -z "$tag"; then
-    tag=cs300:latest
+    tag=cs1680:latest
 fi
 
 vexec () {
@@ -59,8 +60,8 @@ has_container() {
 }
 
 remove_containers() {
-    echo "Removing all existing cs300 containers..."
-    docker ps -a -f name=cs300 --format "{{.ID}}" | while read line ; do docker rm --force $line ; done
+    echo "Removing all existing cs1680 containers..."
+    docker ps -a -f name=cs1680 --format "{{.ID}}" | while read line ; do docker rm --force $line ; done
 }
 
 start_container() {
@@ -76,8 +77,10 @@ start_new_container() {
         --platform $platform \
         --privileged \
         --cap-add=SYS_PTRACE --cap-add=NET_ADMIN --security-opt seccomp=unconfined \
-        -v "$maindir/home":/home/cs300-user \
-        -w "/home/cs300-user" \
+	-e DISPLAY=unix$DISPLAY \
+        -v "$maindir/home":/home/cs168-user \
+	-v /tmp/.X11-unix:/tmp/.X11-unix \
+        -w "/home/cs168-user" \
         $netarg$sshenvarg $tag
 }
 
@@ -91,7 +94,7 @@ myfileid=`stat $statformatarg %d:%i "${BASH_SOURCE[0]}" 2>/dev/null`
 dir="`pwd`"
 subdir=""
 while test "$dir" != / -a "$dir" != ""; do
-    thisfileid=`stat $statformatarg %d:%i "$dir"/cs300-run-docker 2>/dev/null`
+    thisfileid=`stat $statformatarg %d:%i "$dir"/cs1680-run-docker 2>/dev/null`
     if test -n "$thisfileid" -a "$thisfileid" = "$myfileid"; then
         maindir="$dir"
         break
@@ -119,7 +122,7 @@ if test -n "$maindir"; then
         image="`echo $existing_image | sed 's/^.*,//'`"
         image12="`echo $image | head -c 12`"
         echo "* Using running container $image12, created $created_at" 1>&2
-        echo "- To start a new container, exit then \`cs300-run-docker -f\`" 1>&2
+        echo "- To start a new container, exit then \`cs1680-run-docker -f\`" 1>&2
         echo "- To kill this container, exit then \`docker kill $image12\`" 1>&2
         vexec docker exec -it$sshenvarg $image /bin/bash
     fi

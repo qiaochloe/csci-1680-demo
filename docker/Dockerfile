@@ -11,6 +11,7 @@ RUN apt-get update &&\
 
 # install GCC-related packages
 RUN apt-get -y install\
+ build-essential\
  binutils-doc\
  cpp-doc\
  gcc-doc\
@@ -33,16 +34,13 @@ RUN apt-get -y install\
  lldb\
  clang-format
 
-# install qemu for WeensyOS (sadly, this pulls in a lot of crap)
-RUN apt-get -y --no-install-recommends install\
- qemu-system-x86
-
 # install programs used for system exploration
 RUN apt-get -y install\
  blktrace\
  linux-tools-generic\
  strace\
- tcpdump
+ tcpdump\
+ htop
 
 # install interactive programs (emacs, vim, nano, man, sudo, etc.)
 RUN apt-get -y install\
@@ -56,11 +54,21 @@ RUN apt-get -y install\
  nano\
  psmisc\
  sudo\
- wget
+ wget\
+ emacs-nox\
+ vim
+
+RUN echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
+
+# Install graphical apps
+RUN apt-get -y install\
+ wireshark \
+ xterm \
+ x11-xserver-utils
 
 # install rust
-RUN RUSTUP_HOME=/opt/rust CARGO_HOME=/opt/rust \
-  bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo -E sh -s -- -y"
+#RUN RUSTUP_HOME=/opt/rust CARGO_HOME=/opt/rust \
+#  bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo -E sh -s -- -y"
 
 # set up libraries
 RUN apt-get -y install\
@@ -87,20 +95,23 @@ ENV LANG en_US.UTF-8
 # remove unneeded .deb files
 RUN rm -r /var/lib/apt/lists/*
 
-# set up passwordless sudo for user cs300-user
-RUN useradd -m -s /bin/bash cs300-user && \
-  echo "cs300-user ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/cs300-init
+# set up passwordless sudo for user cs1680-user
+RUN useradd -m -s /bin/bash cs1680-user && \
+  echo "cs1680-user ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/cs1680-init
+
+# Add user to the wireshark group
+RUN usermod -a -G wireshark cs1680-user
 
 # create binary reporting version of dockerfile
-RUN (echo '#\!/bin/sh'; echo 'echo 1') > /usr/bin/cs300-docker-version; chmod ugo+rx,u+w,go-w /usr/bin/cs300-docker-version
+RUN (echo '#\!/bin/sh'; echo 'echo 1') > /usr/bin/cs1680-docker-version; chmod ugo+rx,u+w,go-w /usr/bin/cs1680-docker-version
 
 # git build arguments
-ARG USER=cs300\ User
+ARG USER=cs1680\ User
 ARG EMAIL=nobody@example.com
 
 # configure your environment
-USER cs300-user
+USER cs1680-user
 RUN rm -f ~/.bash_logout
 
-WORKDIR /home/cs300-user
+WORKDIR /home/cs1680
 CMD ["/bin/bash", "-l"]
