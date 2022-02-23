@@ -88,6 +88,12 @@ RUN apt-get -y install\
  time\
  traceroute
 
+# Install xpra
+RUN UBUNTU_VERSION=$(cat /etc/os-release | grep UBUNTU_CODENAME | sed 's/UBUNTU_CODENAME=//') && \
+    curl http://xpra.org/gpg.asc | apt-key add - && \
+    echo "deb http://xpra.org/ $UBUNTU_VERSION main" >> /etc/apt/sources.list.d/xpra.list && \
+    apt-get install -y --no-install-recommends xpra xpra-html5
+
 # set up default locale
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8

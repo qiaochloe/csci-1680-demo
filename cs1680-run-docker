@@ -71,16 +71,24 @@ start_container() {
 }
 
 start_new_container() {
+    # Linux
+    #-e DISPLAY=unix$DISPLAY \
+    #-v /tmp/.X11-unix:/tmp/.X11-unix \
+    # MacOS
+    # - Install Xquartz, Allow TCP connections in Xquartz
+    # - xhost +host.docker.internal
+    # - xhost +localhost
+    # - -e DISPLAY=host.docker.internal:0
+    # -p "127.0.0.1:14500:14500" \
     echo "Starting a new container..."
     vexec docker run -it \
         --name $container_name \
         --platform $platform \
         --privileged \
         --cap-add=SYS_PTRACE --cap-add=NET_ADMIN --security-opt seccomp=unconfined \
-	-e DISPLAY=unix$DISPLAY \
-        -v "$maindir/home":/home/cs168-user \
-	-v /tmp/.X11-unix:/tmp/.X11-unix \
-        -w "/home/cs168-user" \
+	-e DISPLAY=host.docker.internal:0 \
+        -v "$maindir/home":/home/cs1680-user \
+        -w "/home/cs1680-user" \
         $netarg$sshenvarg $tag
 }
 
@@ -126,6 +134,21 @@ if test -n "$maindir"; then
         echo "- To kill this container, exit then \`docker kill $image12\`" 1>&2
         vexec docker exec -it$sshenvarg $image /bin/bash
     fi
+fi
+
+do_xhost()
+{
+    arg=$@
+    
+    
+}
+
+x11arg=
+x11envarg=
+if test -n "$DISPLAY" -a "$(uname)" = Linux; then
+    x11arg="-v /tmp/.X11-unix:/tmp/.X11-unix"
+    x11envarg="DISPLAY=unix$DISPLAY"
+    
 fi
 
 netarg=
