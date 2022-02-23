@@ -79,7 +79,7 @@ start_new_container() {
     # - xhost +host.docker.internal
     # - xhost +localhost
     # - -e DISPLAY=host.docker.internal:0
-    # -p "127.0.0.1:14500:14500" \
+
     echo "Starting a new container..."
     vexec docker run -it \
         --name $container_name \
@@ -88,8 +88,9 @@ start_new_container() {
         --cap-add=SYS_PTRACE --cap-add=NET_ADMIN --security-opt seccomp=unconfined \
         -v "$maindir/home":/home/cs1680-user \
         -w "/home/cs1680-user" \
-	$x11envarg $x11arg $netarg$sshenvarg $tag
+	$x11envarg $x11arg $xpraarg $netarg$sshenvarg $tag
 }
+
 
 if stat --format %i / >/dev/null 2>&1; then
     statformatarg="--format"
@@ -152,16 +153,29 @@ do_xhost()
 
 x11arg=
 x11envarg=
-if test -n "$DISPLAY" -a "$(uname)" = Linux; then
-    x11arg="-v /tmp/.X11-unix:/tmp/.X11-unix"
-    x11envarg="-e DISPLAY=unix$DISPLAY"
-    do_xhost local:
-elif test "$(uname)" = Darwin; then
+if test "$(uname)" = Linux; then
+    if grep -qi Microsoft /proc/version; then # Windows
+	x11arg=""
+	x11envarg="-e DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0"
+    else # Native Linux
+	if test -n "$DISPLAY"; then
+	    x11arg="-v /tmp/.X11-unix:/tmp/.X11-unix"
+	    x11envarg="-e DISPLAY=unix$DISPLAY"
+	    do_xhost local:
+	else
+	    # Don't bother doing anything if $DISPLAY isn't set--this might be a headless system
+	    echo "$DISPLAY is not set, skipping X11 configuration"
+	fi
+    fi
+elif test "$(uname)" = Darwin; then # Mac OS
     x11arg=""
     x11envarg="DISPLAY=host.docker.internal:0"
     do_xhost +host.docker.internal
     do_xhost +localhost
 fi
+
+# Expose port 14500 on localhost for XPRA
+xpraarg="-p 127.0.0.1:14500:14500"
 
 netarg=
 if test `uname` = Darwin; then
