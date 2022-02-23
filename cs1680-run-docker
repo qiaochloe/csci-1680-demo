@@ -86,6 +86,7 @@ start_new_container() {
         --platform $platform \
         --privileged \
         --cap-add=SYS_PTRACE --cap-add=NET_ADMIN --security-opt seccomp=unconfined \
+	--add-host=host.docker.internal:host-gateway \
         -v "$maindir/home":/home/cs1680-user \
         -w "/home/cs1680-user" \
 	$x11envarg $x11arg $xpraarg $netarg$sshenvarg $tag
@@ -169,7 +170,7 @@ if test "$(uname)" = Linux; then
     fi
 elif test "$(uname)" = Darwin; then # Mac OS
     x11arg=""
-    x11envarg="DISPLAY=host.docker.internal:0"
+    x11envarg="-e DISPLAY=host.docker.internal:0"
     do_xhost +host.docker.internal
     do_xhost +localhost
 fi
