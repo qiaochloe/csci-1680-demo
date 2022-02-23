@@ -95,6 +95,8 @@ RUN UBUNTU_VERSION=$(cat /etc/os-release | grep UBUNTU_CODENAME | sed 's/UBUNTU_
     apt-get update && \
     apt-get install -y --no-install-recommends xpra xpra-html5
 
+COPY ./xpra.conf /etc/xpra/xpra.conf
+
 # set up default locale
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
