@@ -86,10 +86,9 @@ start_new_container() {
         --platform $platform \
         --privileged \
         --cap-add=SYS_PTRACE --cap-add=NET_ADMIN --security-opt seccomp=unconfined \
-	-e DISPLAY=host.docker.internal:0 \
         -v "$maindir/home":/home/cs1680-user \
         -w "/home/cs1680-user" \
-        $netarg$sshenvarg $tag
+	$x11envarg $x11arg $netarg$sshenvarg $tag
 }
 
 if stat --format %i / >/dev/null 2>&1; then
@@ -136,19 +135,32 @@ if test -n "$maindir"; then
     fi
 fi
 
+xhost_warned=false
 do_xhost()
 {
     arg=$@
-    
-    
+
+    if $(which xhost); then
+	xhost $@
+    else
+	if ! $xhost_warned; then
+	    echo "Warning:  xhost was not detected on your system.  You may have issues running gaphical apps like Wireshark."
+	    xhost_warned=true
+	fi
+    fi
 }
 
 x11arg=
 x11envarg=
 if test -n "$DISPLAY" -a "$(uname)" = Linux; then
     x11arg="-v /tmp/.X11-unix:/tmp/.X11-unix"
-    x11envarg="DISPLAY=unix$DISPLAY"
-    
+    x11envarg="-e DISPLAY=unix$DISPLAY"
+    do_xhost local:
+elif test "$(uname)" = Darwin; then
+    x11arg=""
+    x11envarg="DISPLAY=host.docker.internal:0"
+    do_xhost +host.docker.internal
+    do_xhost +localhost
 fi
 
 netarg=

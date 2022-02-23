@@ -67,8 +67,8 @@ RUN apt-get -y install\
  x11-xserver-utils
 
 # install rust
-#RUN RUSTUP_HOME=/opt/rust CARGO_HOME=/opt/rust \
-#  bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo -E sh -s -- -y"
+RUN RUSTUP_HOME=/opt/rust CARGO_HOME=/opt/rust \
+ bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo -E sh -s -- -y"
 
 # set up libraries
 RUN apt-get -y install\
@@ -92,6 +92,7 @@ RUN apt-get -y install\
 RUN UBUNTU_VERSION=$(cat /etc/os-release | grep UBUNTU_CODENAME | sed 's/UBUNTU_CODENAME=//') && \
     curl http://xpra.org/gpg.asc | apt-key add - && \
     echo "deb http://xpra.org/ $UBUNTU_VERSION main" >> /etc/apt/sources.list.d/xpra.list && \
+    apt-get update && \
     apt-get install -y --no-install-recommends xpra xpra-html5
 
 # set up default locale
