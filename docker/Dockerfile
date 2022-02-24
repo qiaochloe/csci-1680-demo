@@ -10,7 +10,7 @@ RUN apt-get update &&\
   yes | unminimize
 
 # install GCC-related packages
-RUN apt-get -y install\
+RUN apt-get update && apt-get -y install\
  build-essential\
  binutils-doc\
  cpp-doc\
