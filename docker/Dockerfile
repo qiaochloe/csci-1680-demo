@@ -55,6 +55,8 @@ RUN apt-get -y install\
  psmisc\
  sudo\
  wget\
+ screen\
+ tmux\
  emacs-nox\
  vim
 
@@ -103,9 +105,6 @@ COPY ./xpra.conf /etc/xpra/xpra.conf
 # set up default locale
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
-
-# remove unneeded .deb files
-RUN rm -r /var/lib/apt/lists/*
 
 # set up passwordless sudo for user cs1680-user
 RUN useradd -m -s /bin/bash cs1680-user && \
