@@ -89,7 +89,7 @@ start_new_container() {
 	--add-host=host.docker.internal:host-gateway \
         -v "$maindir/home":/home/cs1680-user \
         -w "/home/cs1680-user" \
-	$x11envarg $x11arg $xpraarg $netarg$sshenvarg $tag
+	$x11envarg $x11arg $xpraarg $rtparg $netarg$sshenvarg $tag
 }
 
 
@@ -175,8 +175,11 @@ elif test "$(uname)" = Darwin; then # Mac OS
     do_xhost +localhost
 fi
 
-# Expose port 14500 on localhost for XPRA
+# Expose TCP port 14500 on localhost for XPRA
 xpraarg="-p 127.0.0.1:14500:14500"
+
+# Expose UDP port 14600 on localhost for RTP
+rtparg="-p 127.0.0.1:14600:14600/udp"
 
 netarg=
 if test `uname` = Darwin; then

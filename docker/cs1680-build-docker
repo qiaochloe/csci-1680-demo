@@ -21,7 +21,7 @@ while test "$#" -ne 0; do
         if test "`arch`" = "arm64" -o "`arch`" = "aarch64"; then
             armtext=" [-a|--arm] [-x|--x86-64]"
         fi
-        echo "Usage: cs300-build-docker$armtext" 1>&2
+        echo "Usage: cs1680-build-docker$armtext" 1>&2
         exit 1
     fi
 done

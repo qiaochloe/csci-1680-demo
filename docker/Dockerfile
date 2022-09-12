@@ -58,7 +58,7 @@ RUN apt-get -y install\
  screen\
  tmux\
  emacs-nox\
- vim
+ vim 
 
 RUN echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
 
@@ -73,7 +73,7 @@ RUN RUSTUP_HOME=/opt/rust CARGO_HOME=/opt/rust \
  bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo -E sh -s -- -y"
 
 # Install golang
-RUN bash -c "mkdir /usr/local/go && wget -O - https://go.dev/dl/go1.17.7.linux-amd64.tar.gz | sudo tar -xvz -C /usr/local"
+RUN bash -c "mkdir /usr/local/go && wget -O - https://go.dev/dl/go1.19.1.linux-amd64.tar.gz | sudo tar -xvz -C /usr/local"
 
 # set up libraries
 RUN apt-get -y install\
@@ -91,6 +91,7 @@ RUN apt-get -y install\
  netcat\
  telnet\
  time\
+ pv\
  traceroute
 
 # Install xpra
