@@ -1,5 +1,14 @@
+*~
+\#*#
+.\#*
+
 .vagrant/
 .vscode
 .gitconfig
 .bash_history
 home/
+
+docker/.image-version
+
+
+.DS_Store
