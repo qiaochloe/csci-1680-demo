@@ -7,7 +7,6 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update &&\
   yes | unminimize
 
-
 # install GCC-related packages
 apt-get update && apt-get -y install\
  build-essential\
@@ -93,8 +92,9 @@ export LANG=en_US.UTF-8
 echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
 
 # Rust
-RUSTUP_HOME=/opt/rust CARGO_HOME=/opt/rust \
-		      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo -E sh -s -- -y
+export RUSTUP_HOME=/opt/rust
+export CARGO_HOME=/opt/rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo -E sh -s -- -y
 
 # ###### Graphical setup ######
 # Install a demo programs (replace with necessary software, like wireshark)
@@ -105,7 +105,7 @@ UBUNTU_VERSION=$(cat /etc/os-release | grep UBUNTU_CODENAME | sed 's/UBUNTU_CODE
     curl http://xpra.org/gpg.asc | apt-key add - && \
     echo "deb http://xpra.org/ $UBUNTU_VERSION main" >> /etc/apt/sources.list.d/xpra.list && \
     apt-get update && \
-    apt-get install -y --no-install-recommends xpra xpra-html5
+    apt-get install -y --no-install-recommends xpra xpra-html5 xpra-x11
 
 # #############################
 
