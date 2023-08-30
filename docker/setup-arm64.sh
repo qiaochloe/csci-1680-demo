@@ -117,6 +117,11 @@ for i in addr2line c++filt cpp-9 g++-9 gcc-9 gcov-9 gcov-dump-9 gcov-tool-9 size
 locale-gen en_US.UTF-8
 export LANG=en_US.UTF-8
 
+# Rust
+export RUSTUP_HOME=/opt/rust
+export CARGO_HOME=/opt/rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo -E sh -s -- -y
+
 echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
 
 # ###### Graphical setup ######
@@ -128,7 +133,7 @@ UBUNTU_VERSION=$(cat /etc/os-release | grep UBUNTU_CODENAME | sed 's/UBUNTU_CODE
     curl http://xpra.org/gpg.asc | apt-key add - && \
     echo "deb http://xpra.org/ $UBUNTU_VERSION main" >> /etc/apt/sources.list.d/xpra.list && \
     apt-get update && \
-    apt-get install -y --no-install-recommends xpra xpra-html5
+    apt-get install -y --no-install-recommends xpra xpra-html5 xpra-x11
 
 # #############################
 
