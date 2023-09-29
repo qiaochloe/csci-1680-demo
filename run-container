@@ -83,6 +83,11 @@ stop_container() {
 start_container() {
     echo "Entering existing container"
     echo "(To reset this container on startup, run with --clean)"
+
+    if $use_graphics; then
+	setup_xhost
+    fi
+
     docker start ${container_name}
     run_shell
 }
@@ -138,6 +143,25 @@ do_xhost()
     fi
 }
 
+setup_xhost() {
+    # OS-specific handling for X11 forwarding
+    if test "$(uname)" = Linux; then
+	if grep -qi Microsoft /proc/version; then # Windows
+	    true # Nothing to do, configured in GUI outside WSL
+	else # Native Linux
+	    if test -n "$DISPLAY"; then
+		do_xhost +local:
+	    else
+		# Don't bother doing anything if $DISPLAY isn't set--this might be a headless system
+		echo "$DISPLAY is not set, skipping X11 configuration"
+	    fi
+	fi
+    elif test "$(uname)" = Darwin; then # Mac OS
+	do_xhost +localhost
+	do_xhost +host.docker.internal
+    fi
+}
+
 start_new_container() {
     netarg="--expose=6169/tcp -p 6169:6169/tcp"
 
@@ -159,12 +183,11 @@ start_new_container() {
 	if test "$(uname)" = Linux; then
 	    if grep -qi Microsoft /proc/version; then # Windows
 		x11arg=""
-		x11envarg="-e DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0"
+		x11envarg="-e DISPLAY=host.docker.internal:0"
 	    else # Native Linux
 		if test -n "$DISPLAY"; then
 		    x11arg="-v /tmp/.X11-unix:/tmp/.X11-unix"
 		    x11envarg="-e DISPLAY=unix$DISPLAY"
-		    do_xhost local:
 		else
 		    # Don't bother doing anything if $DISPLAY isn't set--this might be a headless system
 		    echo "$DISPLAY is not set, skipping X11 configuration"
@@ -173,9 +196,10 @@ start_new_container() {
 	elif test "$(uname)" = Darwin; then # Mac OS
 	    x11arg=""
 	    x11envarg="-e DISPLAY=host.docker.internal:0"
-	    do_xhost +host.docker.internal
-	    do_xhost +localhost
 	fi
+
+	# Add any necessary xhost configs
+	setup_xhost
     fi
 
     create_network
@@ -333,38 +357,46 @@ EOF
 
 main()
 {
-    # Top-level args
-    case $1 in
-	--verbose|-v)
-	    shift
-	    verbose=true
-	    ;;
-	--clean|-C)
-	    shift
-	    clean=true
-	    ;;
-	--debug)
-	    shift
-	    set -x
-	    ;;
-	-a|--arm|--arm64|--aarch64)
-	    shift
-	    if [[ ( "${arch}" == "arm64" ) || ( "${arch}" == "aarch64" ) ]]; then
-		platform=linux/arm64
-	    else
-		echo "$0 --arm only works on arm64 hosts (platform is ${arch})" 1>&2
-		exit 1
-	    fi
-	    ;;
-	-x|--x86-64)
-	    shift
-	    platform=linux/amd64
-	    ;;
-	--help)
-	    shift
-	    do_help
-	    exit 0
-    esac
+    POSITIONAL=()
+    while [[ $# -gt 0 ]]; do
+	key=$1
+	case $key in
+	    --verbose|-v)
+		shift
+		verbose=true
+		;;
+	    --clean|-C)
+		shift
+		clean=true
+		;;
+	    --debug)
+		shift
+		set -x
+		;;
+	    -a|--arm|--arm64|--aarch64)
+		shift
+		if [[ ( "${arch}" == "arm64" ) || ( "${arch}" == "aarch64" ) ]]; then
+		    platform=linux/arm64
+		else
+		    echo "$0 --arm only works on arm64 hosts (platform is ${arch})" 1>&2
+		    exit 1
+		fi
+		;;
+	    -x|--x86-64)
+		shift
+		platform=linux/amd64
+		;;
+	    --help)
+		shift
+		do_help
+		exit 0
+		;;
+	    *)
+		POSITIONAL+=("$1")
+		shift
+	esac
+    done
+    set -- "${POSITIONAL[@]}"
 
     __check_platform
 
