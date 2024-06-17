@@ -163,7 +163,7 @@ setup_xhost() {
 }
 
 start_new_container() {
-    netarg="--expose=6169/tcp -p 6169:6169/tcp"
+    netarg="--expose=8169/tcp -p 8169:8169/tcp"
 
     ssharg=
     sshenvarg=
@@ -176,8 +176,8 @@ start_new_container() {
     x11envarg=
     if $use_graphics; then
 	# Add port forward for XPRA (backup display method)
-	netarg="${netarg} -p 127.0.0.1:14500:14500"
-	netarg="${netarg} -p 127.0.0.1:14600:14600"
+	netarg="${netarg} -p 127.0.0.1:14700:14700"
+	#netarg="${netarg} -p 127.0.0.1:14600:14600"
 
 	# OS-specific handling for X11 forwarding
 	if test "$(uname)" = Linux; then
