@@ -3,6 +3,8 @@
 set -eu
 
 export DEBIAN_FRONTEND=noninteractive
+export LANG=en_US.UTF-8
+export TZ=America/New_York
 
 apt-get update &&\
   yes | unminimize
@@ -28,7 +30,6 @@ apt-get update && apt-get -y install\
 
 # set up default locale
 locale-gen en_US.UTF-8
-export LANG=en_US.UTF-8
 
 # install programs used for system exploration
 apt-get -y install\
