@@ -18,10 +18,12 @@ COPY --chown=root:root sources.list /etc/apt/sources.list
 ENV LANG en_US.UTF-8
 
 
-COPY setup-arm64.sh /usr/local/bin/container-setup
+COPY setup-arm64.sh /usr/local/bin/container-setup-arm64
+COPY container-setup-common.sh /usr/local/bin/container-setup-common
 COPY entrypoint.sh /usr/local/bin/container-entrypoint
 COPY .image-version /etc/image-version
-RUN /usr/local/bin/container-setup
+
+RUN /usr/local/bin/container-setup-arm64
 
 # Add configuration for XPRA (required for graphical support only, must happen after setup script)
 COPY ./xpra.conf /etc/xpra/xpra.conf
