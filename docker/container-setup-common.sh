@@ -83,9 +83,9 @@ apt-get -y install xterm wireshark
 # Install xpra (used for backup display method if X11 forwarding doesn't work)
 UBUNTU_VERSION=$(cat /etc/os-release | grep UBUNTU_CODENAME | sed 's/UBUNTU_CODENAME=//') && \
     curl http://xpra.org/gpg.asc | apt-key add - && \
-    echo "deb http://xpra.org/ $UBUNTU_VERSION main" >> /etc/apt/sources.list.d/xpra.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends xpra xpra-html5 xpra-x11
+    echo "deb http://xpra.org/ $UBUNTU_VERSION main" >> /etc/apt/sources.list.d/xpra.list
+#    apt-get update && \
+#    apt-get install -y --no-install-recommends xpra xpra-html5 xpra-x11
 
 # #############################
 

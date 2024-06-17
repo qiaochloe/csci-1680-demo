@@ -7,6 +7,7 @@ maindir=""
 container_name=cs1680-container
 network_name=net-cs1680
 github_org=brown-csci1680
+default_user="cs1680-user"
 user_home="/home/cs1680-user"  # User's home dir inside container
 
 
@@ -24,6 +25,27 @@ arch="`uname -m`"
 # Set automatically by platform detection
 tag=
 platform=
+
+container_runtime=docker
+__find_container_runtime()
+{
+    if $(which docker > /dev/null) ; then
+	if [ -n "$(docker --version | grep -i podman > /dev/null)" ]; then  # Is docker actually an alias for podman?
+	    container_runtime=podman
+	else
+	    container_runtime=docker
+	fi
+    elif $(which podman > /dev/null) ; then
+	container_runtime=podman
+    else
+	# Assume docker if unable to autodetect
+	container_runtime=docker
+    fi
+
+    if [[ $container_runtime == "podman" ]]; then
+	echo "Using podman as container runtime"
+    fi
+}
 
 if stat --format %i / >/dev/null 2>&1; then
     statformatarg="--format"
@@ -62,22 +84,36 @@ vexec () {
     "$@"
 }
 
+is_podman () {
+    if [[ $container_runtime == "podman" ]]; then
+	return 0
+    else
+	return 1
+    fi
+}
+
+do_info () {
+    echo "Expected container runtime:  ${container_runtime}"
+    $container_runtime --version
+    $container_runtime info
+}
+
 has_container() {
-    [ $( docker ps -a | grep $container_name | wc -l ) -gt 0 ]
+    [ $( $container_runtime ps -a | grep $container_name | wc -l ) -gt 0 ]
 }
 
 remove_containers() {
     local _name
     _name="${1:-${container_name}}"
     echo "Removing all existing ${container_name} containers..."
-    docker ps -a -f name=${_name} --format "{{.ID}}" | while read line ; do docker rm --force $line ; done
+    $container_runtime ps -a -f name=${_name} --format "{{.ID}}" | while read line ; do docker rm --force $line ; done
 }
 
 stop_container() {
     local _name
     _name="${1:-${container_name}}"
 
-    docker stop "${_name}"
+    $container_runtime stop "${_name}"
 }
 
 start_container() {
@@ -88,12 +124,12 @@ start_container() {
 	setup_xhost
     fi
 
-    docker start ${container_name}
+    $container_runtime start ${container_name}
     run_shell
 }
 
 run_in_container() {
-    docker exec -it $container_name $@
+    $container_runtime exec -it $container_name $@
 }
 
 run_shell() {
@@ -103,7 +139,7 @@ run_shell() {
 has_network() {
     local rv
     rv=0
-    $(docker network inspect "${network_name}" 2>&1 > /dev/null) || rv=$?
+    $(${container_runtime} network inspect "${network_name}" 2>&1 > /dev/null) || rv=$?
     if [[ $rv == 0 ]]; then
 	return 0
     else
@@ -114,7 +150,7 @@ has_network() {
 create_network() {
     if ! has_network; then
 	echo "Creating container-local network ${network_name}"
-	docker network create "${network_name}"
+	$container_runtime network create "${network_name}"
     else
 	echo "Network ${network_name} already exists"
     fi
@@ -125,7 +161,7 @@ get_network_info() {
 }
 
 remove_network() {
-    docker network rm "${network_name}"
+    $container_runtime network rm "${network_name}"
 }
 
 xhost_warned=false
@@ -162,8 +198,35 @@ setup_xhost() {
     fi
 }
 
+
+add_port_if_open() {
+    local port
+    port="$1"
+    if test `uname` = Darwin; then
+	if ! netstat -n -a -p tcp | grep "\.${port}[  ].*LISTEN" >/dev/null; then
+            netarg="$netarg --expose=${port}/tcp -p ${port}:${port}/tcp"
+	fi
+    elif test -x /bin/netstat; then
+	if ! netstat -n -l -t | grep ":${port}[ 	]" >/dev/null; then
+            netarg="$netarg --expose=${port}/tcp -p ${port}:${port}/tcp"
+	fi
+    fi
+}
+
+
 start_new_container() {
-    netarg="--expose=8169/tcp -p 8169:8169/tcp"
+    netarg=
+    add_port_if_open 8169
+
+    uidflags=
+    hostflags=
+    if is_podman; then
+	uidflags="--userns=keep-id"
+	user_home="/home/$USER"
+    else
+	user_home="/home/${default_user}"
+	hostflags="--add-host=host.docker.internal:host-gateway"
+    fi
 
     ssharg=
     sshenvarg=
@@ -176,8 +239,7 @@ start_new_container() {
     x11envarg=
     if $use_graphics; then
 	# Add port forward for XPRA (backup display method)
-	netarg="${netarg} -p 127.0.0.1:14700:14700"
-	#netarg="${netarg} -p 127.0.0.1:14600:14600"
+	netarg="${netarg} -p 127.0.0.1:24600:24600"
 
 	# OS-specific handling for X11 forwarding
 	if test "$(uname)" = Linux; then
@@ -204,33 +266,19 @@ start_new_container() {
 
     create_network
 
-    vexec docker run -it \
+    vexec $container_runtime run -it \
           --name $container_name \
 	  --platform $platform \
 	  --network "${network_name}" --network-alias "[${container_name}]" \
-	  --add-host=host.docker.internal:host-gateway \
-	  --privileged --security-opt seccomp=unconfined \
+	  --privileged \
+	  $uidflags $hostflags \
+	  --security-opt seccomp=unconfined \
 	  --cap-add=SYS_PTRACE --cap-add=NET_ADMIN \
 	  -v "$maindir/home":"${user_home}" \
           -w "${user_home}" \
 	  $x11arg $x11envarg \
 	  $netarg $sshenvarg "${image_name}:${tag}"
 }
-
-
-
-if test -n "$maindir"; then
-    existing_image="`docker ps -f status=running -f ancestor=${image_name}:${tag} --no-trunc --format "{{.CreatedAt}},{{.ID}}" | sort -r | head -n 1`"
-    if test -n "$existing_image"; then
-        created_at="`echo $existing_image | sed 's/,.*//'`"
-        image="`echo $existing_image | sed 's/^.*,//'`"
-        image12="`echo $image | head -c 12`"
-        echo "* Using running container $image12, created $created_at" 1>&2
-        echo "- To start a new container, exit then \`$0 -f\`" 1>&2
-        echo "- To kill this container, exit then \`docker kill $image12\`" 1>&2
-        vexec docker exec -it $image /bin/bash
-    fi
-fi
 
 do_start_or_run()
 {
@@ -271,8 +319,8 @@ load_image()
 
     echo "Trying to load image at ${target}"
 
-    docker pull "${target}"
-    docker tag "${target}" "${image_name}:${tag}"
+    $container_runtime pull "${target}"
+    $container_runtime tag "${target}" "${image_name}:${tag}"
 }
 
 get_version_string()
@@ -291,15 +339,37 @@ get_version_string()
 
 build_image()
 {
+    local build_file_prefix
+    local build_user
+
+    if is_podman; then
+	build_file_prefix=Podmanfile
+	build_user=$USER
+    else
+	build_file_prefix=Dockerfile
+	build_user=$default_user
+    fi
+
     # Add a version string so we can track the container version
     echo "${container_name} $(get_version_string)" > "${version_file}"
-	echo "image tag -> ${image_name}:${tag}"
+    echo "image tag -> ${image_name}:${tag}"
     if test $platform = linux/arm64; then
-	docker build -t "${image_name}:${tag}" -f Dockerfile.arm64 --platform linux/arm64 .
+	if is_podman; then
+	    echo "Podman is not currently supported on arm64.  Please install docker."
+	    exit 1
+	fi
+	$container_runtime build -t "${image_name}:${tag}" \
+			   -f "${build_file_prefix}.arm64" --platform linux/arm64 \
+			   --build-arg USER=$build_user \
+			   .
     else
-	docker build -t "${image_name}:${tag}" -f Dockerfile --platform linux/amd64 .
+        $container_runtime build -t "${image_name}:${tag}" \
+			   -f "${build_file_prefix}" --platform linux/amd64 \
+			   --build-arg USER=$build_user \
+			   .
     fi
 }
+
 
 enter_build_dir()
 {
@@ -316,16 +386,16 @@ push_image()
 {
     local target
     target="${image_url}:${tag}"
-    docker tag "${image_name}:${tag}" "${target}"
+    $container_runtime tag "${image_name}:${tag}" "${target}"
 
     echo "Pushing ${target}"
-    docker push "${target}"
+    $container_runtime push "${target}"
 }
 
 remove_image()
 {
-    docker image rm --force "${image_name}:${tag}"
-    docker image rm --force "${image_url}:${tag}"
+    $container_runtime image rm --force "${image_name}:${tag}"
+    $container_runtime image rm --force "${image_url}:${tag}"
 }
 
 do_help()
@@ -399,6 +469,7 @@ main()
     set -- "${POSITIONAL[@]}"
 
     __check_platform
+    __find_container_runtime
 
     # Default subcommand
     if [[ $# == 0 ]]; then
@@ -457,6 +528,10 @@ main()
 	    shift
 	    remove_containers "${container_name}"
 	    remove_image $@
+	    ;;
+	info)
+	    shift
+	    do_info $@
 	    ;;
 	*)
 	    echo "Invalid command $1"
