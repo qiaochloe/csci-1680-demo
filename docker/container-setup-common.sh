@@ -59,7 +59,7 @@ apt-get -y install\
  inetutils-ping\
  iproute2\
  net-tools\
- netcat\
+ netcat-openbsd\
  telnet\
  time\
  pv\
@@ -84,8 +84,8 @@ apt-get -y install xterm wireshark
 UBUNTU_VERSION=$(cat /etc/os-release | grep UBUNTU_CODENAME | sed 's/UBUNTU_CODENAME=//') && \
     curl http://xpra.org/gpg.asc | apt-key add - && \
     echo "deb http://xpra.org/ $UBUNTU_VERSION main" >> /etc/apt/sources.list.d/xpra.list
-#    apt-get update && \
-#    apt-get install -y --no-install-recommends xpra xpra-html5 xpra-x11
+    apt-get update && \
+    apt-get install -y --no-install-recommends xpra xpra-html5 xpra-x11
 
 # #############################
 
@@ -94,6 +94,8 @@ rm -r /var/lib/apt/lists/*
 
 # Set up the container user
 if [[ $target_user == "cs1680-user" ]]; then
+    userdel ubuntu || true
+    groupdel ubuntu || true
     useradd -m -s /bin/bash $target_user
 else
     # If using the host's user, don't create one--podman will do this

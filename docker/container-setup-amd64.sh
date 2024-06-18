@@ -38,6 +38,6 @@ apt-get update && apt-get -y install\
 $SCRIPT_DIR/container-setup-common $target_user
 
 # Install golang
-bash -c "mkdir /usr/local/go && wget -O - https://go.dev/dl/go1.21.0.linux-amd64.tar.gz | sudo tar -xvz -C /usr/local"
+bash -c "mkdir /usr/local/go && wget -O - https://go.dev/dl/go1.22.4.linux-amd64.tar.gz | sudo tar -xvz -C /usr/local"
 
 
