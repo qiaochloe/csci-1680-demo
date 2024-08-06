@@ -1,4 +1,4 @@
-FROM ubuntu:noble
+FROM ubuntu:jammy
 
 LABEL org.opencontainers.image.source=https://github.com/brown-csci1680/container-dev
 
