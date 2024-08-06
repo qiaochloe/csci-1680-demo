@@ -194,7 +194,6 @@ setup_xhost() {
 	fi
     elif test "$(uname)" = Darwin; then # Mac OS
 	do_xhost +localhost
-	do_xhost +host.docker.internal
     fi
 }
 
