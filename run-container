@@ -238,7 +238,7 @@ start_new_container() {
     x11envarg=
     if $use_graphics; then
 	# Add port forward for XPRA (backup display method)
-	netarg="${netarg} -p 127.0.0.1:24600:24600"
+	netarg="${netarg} -p 127.0.0.1:14500:14500"
 
 	# OS-specific handling for X11 forwarding
 	if test "$(uname)" = Linux; then

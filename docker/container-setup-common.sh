@@ -33,6 +33,10 @@ apt-get install -y python3 \
 	python3-setuptools \
 	python3-venv
 
+# set up default locale
+locale-gen en_US.UTF-8
+export LANG=en_US.UTF-8
+
 # install interactive programs (emacs, vim, nano, man, sudo, etc.)
 apt-get -y install\
  bc\
@@ -63,11 +67,19 @@ apt-get -y install\
  telnet\
  time\
  pv\
- traceroute
+ traceroute\
+ iperf3\
+ whois
 
-# set up default locale
-locale-gen en_US.UTF-8
-export LANG=en_US.UTF-8
+# install extra programs for assignments
+apt-get -y install \
+	python3-scapy \
+	python3-pexpect \
+	python3-requests
+
+apt-get -y install \
+	golang-goprotobuf-dev golang-google-protobuf-dev
+
 
 echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
 
@@ -78,7 +90,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo -E sh -s -- -y
 
 # ###### Graphical setup ######
 # Install wireshark and xterm (as a graphical demo)
-apt-get -y install xterm wireshark
+apt-get -y install xterm wireshark tshark
 
 # Install xpra (used for backup display method if X11 forwarding doesn't work)
 UBUNTU_VERSION=$(cat /etc/os-release | grep UBUNTU_CODENAME | sed 's/UBUNTU_CODENAME=//') && \
