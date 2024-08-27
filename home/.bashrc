@@ -122,10 +122,6 @@ export CARGO_HOME=/opt/rust
 export RUSTUP_HOME=/opt/rust
 export PATH=$PATH:/opt/rust/bin
 export PATH=$PATH:/usr/local/go/bin
-
-export PATH=~/csci1680-live/src/scripts:$PATH
-export PATH=~/c/starters/ip-tcp-starter:$PATH
-export PATH=~/c/starters/ip-tcp-starter/tools:$PATH
-export PATH=~/c/starters/ip-tcp-starter/tcp_tools:$PATH
+export PATH=$PATH:$HOME/go/bin
 
 . "/opt/rust/env"
