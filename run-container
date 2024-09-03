@@ -20,6 +20,7 @@ use_graphics=true  # Set to true to enable X11 support
 
 clean=false
 verbose=false
+ignore_wsl_mount_warning=false
 arch="`uname -m`"
 
 # Set automatically by platform detection
@@ -44,6 +45,25 @@ __find_container_runtime()
 
     if [[ $container_runtime == "podman" ]]; then
 	echo "Using podman as container runtime"
+    fi
+}
+
+__check_wsl_in_vm()
+{
+    if test "$(uname)" = Linux; then
+	if grep -qi Microsoft /proc/version; then # Windows
+	    if [[ $SCRIPT_DIR == /mnt/?/* ]]; then
+		if [[ $ignore_wsl_mount_warning == false ]]; then
+		    echo "WARNING:  Your container repo appears to be located in ${SCRIPT_DIR}.  On WSL, directories under /mnt/*"
+		    echo "are shared with your Windows host, which will have VERY slow performance."
+		    echo "For better performance, you should go to your WSL home directory (eg. cd ~ in your WSL terminal)"
+		    echo "and move or clone this repository there."
+		    echo "To suppress this warning and continue anyway (NOT RECOMMENDED), run this command again with"
+		    echo "'--ignore-wsl-mount-warning"
+		    exit 1
+		fi
+	    fi
+	fi
     fi
 }
 
@@ -455,6 +475,10 @@ main()
 		shift
 		platform=linux/amd64
 		;;
+	    --ignore-wsl-mount-warning)
+		shift
+		ignore_wsl_mount_warning=true
+		;;
 	    --help)
 		shift
 		do_help
@@ -468,6 +492,7 @@ main()
     set -- "${POSITIONAL[@]}"
 
     __check_platform
+    __check_wsl_in_vm
     __find_container_runtime
 
     # Default subcommand
