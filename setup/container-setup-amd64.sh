@@ -5,15 +5,6 @@ set -eu
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 target_user="${1:-cs1680-user}"
 
-export DEBIAN_FRONTEND=noninteractive
-export TZ=America/New_York
-
-# set up default locale
-export LANG=en_US.UTF-8
-
-apt-get update &&\
-  yes | unminimize
-
 # install GCC-related packages
 apt-get update && apt-get -y install\
  build-essential\
@@ -35,9 +26,7 @@ apt-get update && apt-get -y install\
 
 
 # Do main setup
-$SCRIPT_DIR/container-setup-common $target_user
+$SCRIPT_DIR/container-setup-common.sh $target_user
 
 # Install golang
-bash -c "mkdir /usr/local/go && wget -O - https://go.dev/dl/go1.22.4.linux-amd64.tar.gz | sudo tar -xvz -C /usr/local"
-
-
+bash -c "sudo rm -rf /usr/local/go && sudo mkdir /usr/local/go && wget -O - https://go.dev/dl/go1.22.4.linux-amd64.tar.gz | sudo tar -xvz -C /usr/local"

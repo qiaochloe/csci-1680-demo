@@ -4,24 +4,12 @@ set -eu
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 
-export DEBIAN_FRONTEND=noninteractive
-export TZ=America/New_York
-export LANG=en_US.UTF-8
-
-
-apt-get update &&\
-  yes | unminimize
-
 # include multiarch support
 apt-get update &&
   apt-get -y install binfmt-support &&\
-  dpkg --add-architecture amd64 &&\
+  sudo dpkg --add-architecture amd64 &&\
   apt-get update &&\
   apt-get -y upgrade
-
-# set up default locale
-apt-get update && apt-get -y install locales
-locale-gen en_US.UTF-8
 
 # install GCC-related packages
 apt-get update && apt-get -y install\
@@ -53,17 +41,20 @@ apt-get -y install\
  libblas-dev:amd64\
  liblapack-dev:amd64
 
+# link x86-64 versions of common tools into $SCRIPT_DIR/bin/x86_64-linux-gnu/bin
+mkdir -p $SCRIPT_DIR/../bin/x86_64-linux-gnu/bin
 for i in addr2line c++filt cpp-11 g++-11 gcc-11 gcov-11 gcov-dump-11 gcov-tool-11 size strings; do \
-        ln -s /usr/bin/x86_64-linux-gnu-$i /usr/x86_64-linux-gnu/bin/$i; done && \
-  ln -s /usr/bin/x86_64-linux-gnu-cpp-11 /usr/x86_64-linux-gnu/bin/cpp && \
-  ln -s /usr/bin/x86_64-linux-gnu-g++-11 /usr/x86_64-linux-gnu/bin/c++ && \
-  ln -s /usr/bin/x86_64-linux-gnu-g++-11 /usr/x86_64-linux-gnu/bin/g++ && \
-  ln -s /usr/bin/x86_64-linux-gnu-gcc-11 /usr/x86_64-linux-gnu/bin/gcc && \
-  ln -s /usr/bin/x86_64-linux-gnu-gcc-11 /usr/x86_64-linux-gnu/bin/cc && \
-  ln -s /usr/bin/gdb-multiarch /usr/x86_64-linux-gnu/bin/gdb
+        ln -s /usr/bin/x86_64-linux-gnu-$i $SCRIPT_DIR/../bin/x86_64-linux-gnu/bin/$i; done && \
+  ln -s /usr/bin/x86_64-linux-gnu-cpp-11 $SCRIPT_DIR/../bin/x86_64-linux-gnu/bin/cpp && \
+  ln -s /usr/bin/x86_64-linux-gnu-g++-11 $SCRIPT_DIR/../bin/x86_64-linux-gnu/bin/c++ && \
+  ln -s /usr/bin/x86_64-linux-gnu-g++-11 $SCRIPT_DIR/../bin/x86_64-linux-gnu/bin/g++ && \
+  ln -s /usr/bin/x86_64-linux-gnu-gcc-11 $SCRIPT_DIR/../bin/x86_64-linux-gnu/bin/gcc && \
+  ln -s /usr/bin/x86_64-linux-gnu-gcc-11 $SCRIPT_DIR/../bin/x86_64-linux-gnu/bin/cc && \
+  ln -s /usr/bin/gdb-multiarch $SCRIPT_DIR/../bin/x86_64-linux-gnu/bin/gdb
 
 # Do main setup
-$SCRIPT_DIR/container-setup-common
+$SCRIPT_DIR/container-setup-common.sh
+
 # Install golang
-bash -c "mkdir /usr/local/go && wget -O - https://go.dev/dl/go1.22.4.linux-arm64.tar.gz | sudo tar -xvz -C /usr/local"
+bash -c "sudo rm -rf /usr/local/go && sudo mkdir /usr/local/go && wget -O - https://go.dev/dl/go1.22.4.linux-arm64.tar.gz | sudo tar -xvz -C /usr/local"
 
